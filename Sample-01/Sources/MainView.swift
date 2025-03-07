@@ -1,5 +1,6 @@
 import SwiftUI
 import Auth0
+import DeviceCheck
 
 struct MainView: View {
     @State var user: User?
@@ -21,6 +22,7 @@ struct MainView: View {
 
 extension MainView {
     func login() {
+<<<<<<< HEAD
         Auth0
             .webAuth()
             .useHTTPS() // Use a Universal Link callback URL on iOS 17.4+ / macOS 14.4+
@@ -31,7 +33,22 @@ extension MainView {
                 case .failure(let error):
                     print("Failed with: \(error)")
                 }
+=======
+        Task {
+            guard let dcToken = await deviceCheckToken()?.base64EncodedString() else {
+                return print("Failed to get Device Token!")
+>>>>>>> origin/device-token
             }
+            
+            print(dcToken)
+
+            do {
+                let credentials = try await Auth0.webAuth().parameters(["dc_token": dcToken]).start()
+                self.user = User(from: credentials.idToken)
+            } catch {
+                print("Failed with: \(error)")
+            }
+        }
     }
 
     func logout() {
@@ -47,4 +64,10 @@ extension MainView {
                 }
             }
     }
+
+    func deviceCheckToken() async -> Data? {
+        guard DCDevice.current.isSupported else { return nil }
+        return try? await DCDevice.current.generateToken()
+    }
+
 }
